@@ -1,0 +1,12 @@
+{
+  "name": "netlify-deploy",
+  "version": "1.0.0",
+  "description": "Deploy HTML to Netlify via web UI",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
