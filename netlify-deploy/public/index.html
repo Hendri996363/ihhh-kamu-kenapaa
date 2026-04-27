@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deploy — Publish Web Gratis</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080808;--s1:#111;--s2:#181818;--s3:#222;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --green:#00e676;--green2:#00c853;--green3:#009624;
+  --cream:#f0ede8;--muted:#555;--dim:#888;
+  --red:#ff5252;--yellow:#ffd740;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--cream);font-family:'Syne',sans-serif;overflow-x:hidden}
+
+/* ambient */
+body::before{content:'';position:fixed;top:-20%;left:30%;width:500px;height:500px;
+  background:radial-gradient(circle,rgba(0,230,118,0.05) 0%,transparent 70%);
+  pointer-events:none;z-index:0}
+
+.wrap{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:52px 20px 80px;display:flex;flex-direction:column;gap:24px}
+
+/* hero */
+.hero{text-align:center}
+.hero-tag{font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.hero-tag::before,.hero-tag::after{content:'';flex:1;max-width:60px;height:1px;background:var(--border2)}
+.hero-title{font-size:clamp(32px,8vw,52px);font-weight:800;line-height:.95;letter-spacing:-.03em}
+.hero-title .g{color:var(--green)}
+.hero-sub{margin-top:12px;font-size:14px;color:var(--dim);letter-spacing:.03em}
+.hero-url{margin-top:8px;font-family:'Syne Mono',monospace;font-size:12px;color:rgba(0,230,118,0.5);letter-spacing:.05em}
+
+/* card */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 4px 24px rgba(0,0,0,.5)}
+.card-label{font-family:'Syne Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+.card-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* upload zone */
+.upload-zone{border:1.5px dashed rgba(0,230,118,0.2);border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:.25s;position:relative;overflow:hidden;background:rgba(0,230,118,0.02)}
+.upload-zone:hover,.upload-zone.over{border-color:var(--green);background:rgba(0,230,118,0.05)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.uz-icon{font-size:32px;display:block;margin-bottom:10px}
+.uz-main{font-size:14px;color:var(--cream);font-weight:600;display:block;margin-bottom:4px}
+.uz-sub{font-size:12px;color:var(--muted)}
+.uz-limit{display:inline-block;margin-top:10px;padding:4px 12px;border-radius:999px;border:1px solid var(--border2);font-family:'Syne Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+
+/* file preview */
+.file-preview{display:none;align-items:center;gap:12px;padding:12px 16px;background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px}
+.file-preview.show{display:flex}
+.file-icon{font-size:22px}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:13px;color:var(--cream);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-size{font-family:'Syne Mono',monospace;font-size:10px;color:var(--dim);margin-top:2px}
+.file-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;transition:.15s;padding:4px}
+.file-del:hover{color:var(--red)}
+
+/* name input */
+.name-row{display:flex;align-items:center;gap:0;background:var(--s2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:.2s}
+.name-row:focus-within{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,230,118,.08)}
+.name-prefix{padding:0 14px;font-family:'Syne Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap;background:var(--s3);height:48px;display:flex;align-items:center;border-right:1px solid var(--border)}
+.name-input{flex:1;background:transparent;border:none;padding:0 14px;color:var(--cream);font-family:'Syne Mono',monospace;font-size:14px;height:48px;outline:none;letter-spacing:.02em}
+.name-input::placeholder{color:var(--muted)}
+.name-suffix{padding:0 14px;font-family:'Syne Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap;background:var(--s3);height:48px;display:flex;align-items:center;border-left:1px solid var(--border)}
+
+/* availability badge */
+.avail{height:24px;display:flex;align-items:center;gap:6px;font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;transition:.25s}
+.avail.checking{color:var(--yellow)}
+.avail.ok{color:var(--green)}
+.avail.taken{color:var(--red)}
+.avail.idle{color:transparent}
+.avail-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* progress */
+.progress{display:none;flex-direction:column;gap:10px}
+.progress.show{display:flex}
+.prog-bar-bg{width:100%;height:3px;background:rgba(0,230,118,.1);border-radius:2px;overflow:hidden}
+.prog-bar-fill{height:100%;background:linear-gradient(90deg,var(--green3),var(--green));width:0%;transition:width .4s ease;border-radius:2px}
+.prog-steps{display:flex;flex-direction:column;gap:6px}
+.prog-step{display:flex;align-items:center;gap:10px;font-family:'Syne Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.08em;transition:.3s}
+.prog-step.active{color:var(--cream)}
+.prog-step.done{color:var(--green)}
+.prog-step-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.prog-step.active .prog-step-dot{animation:pulse .8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* result */
+.result{display:none;flex-direction:column;gap:14px;padding:20px;background:rgba(0,230,118,.05);border:1px solid rgba(0,230,118,.2);border-radius:14px}
+.result.show{display:flex}
+.result-label{font-family:'Syne Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--green)}
+.result-url{font-size:18px;font-weight:700;color:var(--cream);letter-spacing:-.01em;word-break:break-all}
+.result-actions{display:flex;gap:8px}
+.ract{flex:1;padding:10px;border-radius:10px;font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:.2s;border:1px solid var(--border2);background:transparent;color:var(--cream);text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px}
+.ract:hover{background:rgba(255,255,255,.06)}
+.ract.primary{background:var(--green);border-color:var(--green);color:#000;font-weight:700}
+.ract.primary:hover{background:var(--green2)}
+
+/* error */
+.error-box{display:none;padding:12px 16px;background:rgba(255,82,82,.07);border:1px solid rgba(255,82,82,.2);border-radius:10px;font-family:'Syne Mono',monospace;font-size:11px;color:var(--red);letter-spacing:.06em}
+.error-box.show{display:block}
+
+/* deploy btn */
+.deploy-btn{width:100%;padding:16px;border-radius:14px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#000;background:linear-gradient(135deg,var(--green) 0%,var(--green2) 100%);box-shadow:0 6px 24px rgba(0,230,118,.2),inset 0 1px 0 rgba(255,255,255,.2);letter-spacing:.02em;transition:.2s;display:flex;align-items:center;justify-content:center;gap:10px}
+.deploy-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,230,118,.3)}
+.deploy-btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.deploy-btn-icon{font-size:20px}
+
+/* footer */
+.footer{text-align:center;font-family:'Syne Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;opacity:.4}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">Free Deploy</div>
+    <h1 class="hero-title">Publish<br>Web<span class="g">.</span><br>Sekarang</h1>
+    <p class="hero-sub">Upload HTML → pilih nama → langsung live</p>
+    <p class="hero-url">namakamu.netlify.app</p>
+  </div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div class="card">
+    <div class="card-label">01 — File HTML</div>
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept=".html,text/html">
+      <span class="uz-icon">📄</span>
+      <span class="uz-main">Tap untuk pilih file HTML</span>
+      <span class="uz-sub">atau seret ke sini</span>
+      <span class="uz-limit">Maks 5MB</span>
+    </div>
+    <div class="file-preview" id="filePreview">
+      <span class="file-icon">✦</span>
+      <div class="file-info">
+        <div class="file-name" id="fileName">—</div>
+        <div class="file-size" id="fileSize">—</div>
+      </div>
+      <button class="file-del" id="fileDel">✕</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: NAME -->
+  <div class="card">
+    <div class="card-label">02 — Nama Web</div>
+    <div class="name-row">
+      <span class="name-prefix">https://</span>
+      <input class="name-input" id="nameInput" placeholder="nama-web-kamu" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <span class="name-suffix">.netlify.app</span>
+    </div>
+    <div class="avail idle" id="availBadge">
+      <div class="avail-dot"></div>
+      <span id="availText">—</span>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- PROGRESS -->
+  <div class="progress" id="progress">
+    <div class="prog-bar-bg"><div class="prog-bar-fill" id="progFill"></div></div>
+    <div class="prog-steps">
+      <div class="prog-step" id="step1"><div class="prog-step-dot"></div>Membaca file HTML</div>
+      <div class="prog-step" id="step2"><div class="prog-step-dot"></div>Membuat site di Netlify</div>
+      <div class="prog-step" id="step3"><div class="prog-step-dot"></div>Upload file</div>
+      <div class="prog-step" id="step4"><div class="prog-step-dot"></div>Menunggu deploy selesai</div>
+      <div class="prog-step" id="step5"><div class="prog-step-dot"></div>Live!</div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="result">
+    <div class="result-label">✓ Web kamu sudah live!</div>
+    <div class="result-url" id="resultUrl">—</div>
+    <div class="result-actions">
+      <a class="ract primary" id="resultOpen" href="#" target="_blank">🚀 Buka</a>
+      <button class="ract" id="resultCopy" onclick="copyUrl()">📋 Copy Link</button>
+      <button class="ract" onclick="resetAll()">↺ Deploy Lagi</button>
+    </div>
+  </div>
+
+  <!-- DEPLOY BTN -->
+  <button class="deploy-btn" id="deployBtn" disabled onclick="startDeploy()">
+    <span class="deploy-btn-icon">🚀</span>
+    Deploy Sekarang
+  </button>
+
+  <div class="footer">powered by netlify api · built with ♥</div>
+</div>
+
+<script>
+// ── STATE
+let htmlFile = null;
+let htmlContent = '';
+let nameAvailable = false;
+let checkTimeout = null;
+let deployedUrl = '';
+
+// ── FILE UPLOAD
+const zone   = document.getElementById('uploadZone');
+const input  = document.getElementById('fileInput');
+
+zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over') });
+zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+input.addEventListener('change', function() { if (this.files[0]) loadFile(this.files[0]) });
+document.getElementById('fileDel').addEventListener('click', clearFile);
+
+function loadFile(file) {
+  if (!file.name.endsWith('.html') && file.type !== 'text/html') {
+    showError('File harus berformat .html'); return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showError('File terlalu besar (maks 5MB)'); return;
+  }
+  htmlFile = file;
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = formatSize(file.size);
+  document.getElementById('filePreview').classList.add('show');
+  zone.style.display = 'none';
+  hideError();
+  checkBtn();
+
+  const r = new FileReader();
+  r.onload = e => { htmlContent = e.target.result; };
+  r.readAsText(file);
+}
+
+function clearFile() {
+  htmlFile = null; htmlContent = '';
+  document.getElementById('filePreview').classList.remove('show');
+  zone.style.display = '';
+  input.value = '';
+  checkBtn();
+}
+
+// ── NAME INPUT
+const nameInput = document.getElementById('nameInput');
+nameInput.addEventListener('input', () => {
+  // auto lowercase + remove invalid chars
+  nameInput.value = nameInput.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  clearTimeout(checkTimeout);
+  const name = nameInput.value;
+  if (name.length < 3) {
+    setAvail('idle', ''); checkBtn(); return;
+  }
+  setAvail('checking', 'Mengecek...');
+  checkTimeout = setTimeout(() => checkAvailability(name), 600);
+});
+
+async function checkAvailability(name) {
+  try {
+    const r = await fetch(`/api/check?name=${encodeURIComponent(name)}`);
+    const d = await r.json();
+    if (d.available) {
+      setAvail('ok', 'Tersedia ✓');
+      nameAvailable = true;
+    } else {
+      setAvail('taken', 'Sudah dipakai');
+      nameAvailable = false;
+    }
+  } catch {
+    setAvail('idle', '');
+    nameAvailable = false;
+  }
+  checkBtn();
+}
+
+function setAvail(state, text) {
+  const badge = document.getElementById('availBadge');
+  badge.className = 'avail ' + state;
+  document.getElementById('availText').textContent = text;
+}
+
+// ── DEPLOY BUTTON
+function checkBtn() {
+  const ok = htmlFile && htmlContent && nameInput.value.length >= 3 && nameAvailable;
+  document.getElementById('deployBtn').disabled = !ok;
+}
+
+// ── DEPLOY
+async function startDeploy() {
+  if (!htmlContent || !nameInput.value) return;
+  hideError();
+  document.getElementById('deployBtn').disabled = true;
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('progress').classList.add('show');
+
+  const steps = ['step1','step2','step3','step4','step5'];
+
+  function setStep(i) {
+    steps.forEach((s, idx) => {
+      const el = document.getElementById(s);
+      el.classList.remove('active','done');
+      if (idx < i) el.classList.add('done');
+      if (idx === i) el.classList.add('active');
+    });
+    document.getElementById('progFill').style.width = ((i+1)/steps.length * 100) + '%';
+  }
+
+  setStep(0);
+  await sleep(400);
+  setStep(1);
+
+  try {
+    const res = await fetch('/api/deploy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        siteName: nameInput.value,
+        htmlContent: htmlContent
+      })
+    });
+
+    setStep(2);
+    const data = await res.json();
+
+    if (!res.ok) {
+      document.getElementById('progress').classList.remove('show');
+      showError(data.error || 'Deploy gagal');
+      document.getElementById('deployBtn').disabled = false;
+      return;
+    }
+
+    setStep(3);
+    await sleep(500);
+    setStep(4);
+    await sleep(800);
+    setStep(5);
+    await sleep(400);
+
+    document.getElementById('progress').classList.remove('show');
+
+    // Show result
+    deployedUrl = data.url;
+    document.getElementById('resultUrl').textContent = data.url;
+    document.getElementById('resultOpen').href = data.url;
+    document.getElementById('result').classList.add('show');
+
+  } catch (err) {
+    document.getElementById('progress').classList.remove('show');
+    showError('Network error: ' + err.message);
+    document.getElementById('deployBtn').disabled = false;
+  }
+}
+
+function copyUrl() {
+  navigator.clipboard.writeText(deployedUrl).then(() => {
+    const btn = document.getElementById('resultCopy');
+    btn.textContent = '✓ Tersalin!';
+    setTimeout(() => btn.textContent = '📋 Copy Link', 2000);
+  });
+}
+
+function resetAll() {
+  clearFile();
+  nameInput.value = '';
+  setAvail('idle', '');
+  nameAvailable = false;
+  htmlContent = '';
+  deployedUrl = '';
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('progress').classList.remove('show');
+  checkBtn();
+}
+
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.textContent = '⚠ ' + msg;
+  b.classList.add('show');
+}
+function hideError() {
+  document.getElementById('errorBox').classList.remove('show');
+}
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
